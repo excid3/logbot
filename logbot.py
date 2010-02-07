@@ -29,160 +29,138 @@ __date__ = "08/11/2009"
 __copyright__ = "Copyright (c) Chris Oliver"
 __license__ = "GPL2"
 
-# Imports
+
 import os
 import os.path
 import irclib
 from ftplib import FTP
 from time import strftime
 
+
 # Customizable Variables
 ########################
-# Log format
-extensions = {'text':'log',
-             'html':'html'}
-# Valid formats: text, html
-FORMAT = 'text'
-
-# Connection information
 network = 'irc.freenode.net'
 port = 6667
-channels = ['#keryx']
-nick = 'Excid3LogBot'
-name = 'Excid3LogBot'
+channels = ['#excid3', '#keryx']
+nick = 'Timber'
+owner = ['excid3|asus', 'mac9416']
+logs_folder = 'logs'
 
-# FTP information
-USE_FTP = False # Allow FTP uploads
-host = '' # Server Ex. deathlok.dreamhost.com
-username = ''
-password = ''
-# Folder on the server where the logs will be stored
-# ALWAYS terminate with a /
-# NOTE: This directory should already exist
-# Ex: chdir = 'excid3.com/logs/'
-chdir = ''
 
-counter = 0
-lines = 50
+html_header = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"> 
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>%s</title>
+    <link href="/static/css/stylesheet.css" rel="stylesheet" type="text/css" />
+  </head>
+  <body onload="init()">
+  </body>
+</html>
+"""
 
-def write(channel, message):
-    """ Write to the log file and console """
-    # Format the message
-    string = '%s %s' % (strftime('[%H:%M]'), message)
-    if FORMAT == 'html':
-        string += '<br />'
-    string += '\n'
-    
-    # Make sure the local folder exists for logging this channel
-    if not os.path.exists(channel):
-        os.mkdir(channel)
+
+class LogBot(object):
+    def __init__(self, network, port, channels, owner, nick, folder):
+        self.network = network
+        self.port = port
+        self.channels = channels
+        self.owner = owner
+        self.nick = nick
+        self.folder = folder
         
-    # Append the message to the file locally
-    path = os.path.join(channel, '%s_%s.%s' % (channel, strftime('%m-%d-%Y'), \
-                        extensions[FORMAT]))
-    f = open(path, 'a')
-    f.write(string)
-    f.close()
-    print '%s> %s' % (channel, message)
+    def start(self):
+        # Write logs locally, so we need the folder to exist
+        if not os.path.exists(self.folder):
+            os.mkdir(self.folder)
+        os.chdir(self.folder)
 
-def handleJoin(connection, event):
-    """ User joins channel """
-    nick = event.source().split("!")
+        # Create an IRC object
+        self.irc = irclib.IRC()
+
+        # Setup the IRC functionality we want to log
+        handlers = {'join': self.handleJoin,
+                    'pubmsg': self.handlePubMessage,
+                    'privmsg': self.handlePrivMessage,
+                    'part': self.handlePart,
+                    'invite': self.handleInvite,
+                    'kick': self.handleKick,
+                    'mode': self.handleMode,
+                    'pubnotice': self.handlePubNotice,
+                    'quit': self.handleQuit}
+        for key, val in handlers.items():
+            self.irc.add_global_handler(key, val)
+
+        # Create a server object, connect and join the channel
+        self.server = self.irc.server()
+        self.server.connect(self.network, self.port, self.nick, ircname=self.nick)
+        for channel in self.channels:
+            self.server.join(channel)
+
+        # Jump into an infinte loop
+        self.irc.process_forever()
     
-    try:
-        nickmask = nick[1]
+            #eventtype -- A string describing the event.
+            #source -- The originator of the event (a nick mask or a server).
+            #target -- The target of the event (a nick or a channel).
+            #arguments 
+    def handleKick(self, connection, event):
+        # kicker, channel, [person, reason]
+        print event.source(), event.target(), event.arguments()
+    def handleMode(self, connection, event):
+        # person giving ops, #channel, [modes, person]
+        print event.source(), event.target(), event.arguments()
+    def handlePubNotice(self, connection, event):
+        # user, channel, [msg]
+        print event.source(), event.target(), event.arguments()
+    def handleQuit(self, connection, event):
+        # user, channel?, [reason]
+        print event.source(), event.target(), event.arguments()
+    def handlePrivMessage(self, connection, event):
+        # sender, receiver (me), [msg]
+        print event.source(), event.target(), event.arguments()
+        
+    def handleJoin(self, connection, event):
+        nick = event.source().split("!")
+        try:
+            nickmask = nick[1]
+        except:
+            nickmask = "unknown"
         nick = nick[0]
-    except:
-        nick = "unknown"
-        nickmask = "unknown"
         
-    write(event.target(), '%s (%s) has joined %s' % 
-          (nick, nickmask, event.target()))
-          
-def handleInvite(connection, event):
-    """ User invites bot to join channel """
-    connection.join(event.arguments()[0])    
-
-def handlePubMessage(connection, event): # Any public message
-    """ Public message is sent """
-    global counter, lines
-    write(event.target(), '%s: %s' % \
-            (event.source().split ('!')[0], event.arguments()[0]))
-                                          
-    # Update the counter and check it to see if its time to upload
-    counter += 1
-    if counter == lines and USE_FTP:
-        upload()
-        counter = 0
-
-def handlePart(connection, event):
-    """ User parts channel """
-    write(event.target(), '%s has parted %s' % \
-            (event.source().split('!')[0], event.target()))
-
-def upload():
-    """ Upload files via FTP """
-    try:
-        print 'Uploading logs to %s ...' % host
+        print "%s (%s) has joined %s" % \
+                              (nick,
+                               nickmask,
+                               event.target())
         
-        # Create the FTP connection
-        ftp = FTP(host, username, password)
+    def handlePubMessage(self, connection, event):
+        nick = event.source().split("!")[0]
+        print "%s: %s" % \
+              (nick,
+               event.arguments()[0])
         
-        # Attempt to create the directory if it does not already exist
-        try:    ftp.mkd(chdir)
-        except: pass
-
-        for channel in channels:
-            # Attempt to create subdirectory for channel
-            try:   ftp.mkd('%s%s' % (chdir, channel))
-            except: pass
-            
-            # Move to the directory
-            ftp.cwd('%s%s' % (chdir, channel))
-            
-            # Get the path for the filename
-            path = os.path.join(channel, '%s_%s' % \
-                    (channel, strftime('%m-%d-%Y')))
-            
-            # Open the file and store it via FTP
-            f = open(path, 'rb')
-            ftp.storbinary('STOR %s_%s.%s' % \
-                    (channel, strftime('%m-%d-%Y'), extensions[FORMAT]), f)
-            f.close()
-            
-        # Close the FTP connection
-        ftp.quit()
-        print 'Finished uploading logs to %s' % chdir
+    def handlePart(self, connection, event):
+        nick = event.source().split("!")[0]
+        print '%s has parted %s' % \
+            (nick, 
+             event.target())
+             
+    def handleInvite(self, connection, event):
+        nick = event.source().split("!")[0]
         
-    except Exception, e:
-        print e
-        print 'Make sure your FTP information is correct.'
+        # Only allow invites from owner(s)
+        if not nick in self.owner:
+            print "Invite from %s denied" % nick
+            return
+            
+        for channel in event.arguments():
+            self.server.join(channel)
+            
 
 def main():
-    """ Join the IRC server """
-
-    # Write logs locally to logs/
-    if not os.path.exists('logs'):
-        os.mkdir('logs')
-    os.chdir('logs')
-
-    # Create an IRC object
-    irc = irclib.IRC()
-
-    # Setup the IRC functionality we want to log
-    irc.add_global_handler('join', handleJoin)
-    irc.add_global_handler('pubmsg', handlePubMessage)
-    irc.add_global_handler('part', handlePart)
-    irc.add_global_handler('invite', handleInvite)
-
-    # Create a server object, connect and join the channel
-    server = irc.server()
-    server.connect(network, port, nick, ircname=name)
-    for channel in channels:
-        server.join(channel)
-
-    # Jump into an infinte loop
-    irc.process_forever()
+    bot = LogBot(network, port, channels, owner, nick, logs_folder)
+    bot.start()
 
 if __name__ == '__main__':
     main()
