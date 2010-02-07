@@ -105,23 +105,51 @@ class LogBot(object):
             #source -- The originator of the event (a nick mask or a server).
             #target -- The target of the event (a nick or a channel).
             #arguments 
+            
     def handleKick(self, connection, event):
+        """Handles kick messages
+        Writes messages to log
+        """
         # kicker, channel, [person, reason]
-        print event.source(), event.target(), event.arguments()
+        # event.source(), event.target(), event.arguments()
+        person, reason = event.arguments()
+        write(event.target(),
+              "%s left the room (Kicked by %s (%s))" % \
+              (
+
+        
     def handleMode(self, connection, event):
+        """Handles mode changes
+        Writes messages to log
+        """
         # person giving ops, #channel, [modes, person]
         print event.source(), event.target(), event.arguments()
+        
     def handlePubNotice(self, connection, event):
+        """Handles public notices
+        Writes messages to log
+        """
         # user, channel, [msg]
         print event.source(), event.target(), event.arguments()
+        
     def handleQuit(self, connection, event):
+        """Handles quite messages
+        Writes messages to log
+        """
         # user, channel?, [reason]
         print event.source(), event.target(), event.arguments()
+        
     def handlePrivMessage(self, connection, event):
+        """Handles private messages
+        Used for owners to send instructions to bot
+        """
         # sender, receiver (me), [msg]
         print event.source(), event.target(), event.arguments()
         
     def handleJoin(self, connection, event):
+        """Handles user join messages
+        Writes messages to log
+        """
         nick = event.source().split("!")
         try:
             nickmask = nick[1]
@@ -135,18 +163,27 @@ class LogBot(object):
                                event.target())
         
     def handlePubMessage(self, connection, event):
+        """Handles public messages
+        Writes messages to log
+        """
         nick = event.source().split("!")[0]
         print "%s: %s" % \
               (nick,
                event.arguments()[0])
         
     def handlePart(self, connection, event):
+        """Handles part messages
+        Writes messages to log
+        """
         nick = event.source().split("!")[0]
         print '%s has parted %s' % \
             (nick, 
              event.target())
              
     def handleInvite(self, connection, event):
+        """Handles invitations from IRC users
+        Only accept invites to join a channel if they are from an owner
+        """
         nick = event.source().split("!")[0]
         
         # Only allow invites from owner(s)
@@ -157,6 +194,8 @@ class LogBot(object):
         for channel in event.arguments():
             self.server.join(channel)
             
+    def write(self):
+        pass
 
 def main():
     bot = LogBot(network, port, channels, owner, nick, logs_folder)
