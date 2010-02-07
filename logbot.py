@@ -33,18 +33,11 @@ __license__ = "GPL2"
 import os
 import os.path
 import irclib
+
+from ConfigParser import ConfigParser
 from ftplib import FTP
+from optparse import OptionParser
 from time import strftime
-
-
-# Customizable Variables
-########################
-network = 'irc.freenode.net'
-port = 6667
-channels = ['#excid3', '#keryx']
-nick = 'Timber'
-owner = ['excid3|asus', 'mac9416']
-logs_folder = 'logs'
 
 
 html_header = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
@@ -116,7 +109,6 @@ class LogBot(object):
         write(event.target(),
               "%s left the room (Kicked by %s (%s))" % \
               (
-
         
     def handleMode(self, connection, event):
         """Handles mode changes
@@ -197,9 +189,37 @@ class LogBot(object):
     def write(self):
         pass
 
-def main():
-    bot = LogBot(network, port, channels, owner, nick, logs_folder)
-    bot.start()
+		
+def main(conf):
+    """
+    Start the bot using a config file.
 
+    :Parameters:
+       - `conf`: config file location
+    """
+    CONFIG = ConfigParser()
+    CONFIG.read(conf)
+    network = CONFIG.get('irc', 'network')
+    port = CONFIG.getint('irc', 'port')
+    channels = CONFIG.get('irc', 'channels').split(',')
+    nick = CONFIG.get('irc', 'nick')
+    owner = CONFIG.get('irc', 'owners').split(',')
+    logs_folder = CONFIG.get('log', 'folder')
+
+    bot = LogBot(network, port, channels, owner, nick, logs_folder)
+    try:
+        bot.start()
+    except KeyboardInterrupt:
+        pass
+
+		
 if __name__ == '__main__':
-    main()
+    # Require a config
+    parser = OptionParser()
+    parser.add_option('-c', '--config', dest='conf', help='Config to use')
+    (options, args) = parser.parse_args()
+
+    if not options.conf or not os.access(options.conf, os.R_OK):
+        parser.print_help()
+        raise SystemExit(1)
+    main(options.conf)
