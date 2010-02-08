@@ -1,0 +1,18 @@
+body {
+    background-color: #F8F8FF;
+    font-family: arial, sans-serif;
+    font-size: 13px;
+}
+
+.time {
+    color: #445588;
+}
+
+.person {
+    color: #DD1144;
+    font-weight: bold;
+}
+
+.kick {
+    color: #FF0000;
+}
