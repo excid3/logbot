@@ -56,12 +56,13 @@ html_header = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
 
 
 class LogBot(object):
-    def __init__(self, network, port, channels, owner, nick, folder, stylesheet):
+    def __init__(self, network, port, channels, owner, nick, password, folder, stylesheet):
         self.network = network
         self.port = port
         self.channels = channels
         self.owner = owner
         self.nick = nick
+        self.password = password
         self.folder = folder
         self.stylesheet = stylesheet
         
@@ -90,6 +91,10 @@ class LogBot(object):
         # Create a server object, connect and join the channel
         self.server = self.irc.server()
         self.server.connect(self.network, self.port, self.nick, ircname=self.nick)
+
+        if self.password:        
+            self.server.privmsg("nickserv", "identify %s" % self.password)
+
         for channel in self.channels:
             self.server.join(channel)
 
@@ -241,11 +246,15 @@ def main(conf):
     port = CONFIG.getint('irc', 'port')
     channels = CONFIG.get('irc', 'channels').split(',')
     nick = CONFIG.get('irc', 'nick')
+    try:
+        password = CONFIG.get('irc', 'password')
+    except:
+        password = None
     owner = CONFIG.get('irc', 'owners').split(',')
     logs_folder = CONFIG.get('log', 'folder')
     stylesheet = CONFIG.get('log', 'stylesheet')
 
-    bot = LogBot(network, port, channels, owner, nick, logs_folder, stylesheet)
+    bot = LogBot(network, port, channels, owner, nick, password, logs_folder, stylesheet)
     try:
         bot.start()
     except KeyboardInterrupt:
