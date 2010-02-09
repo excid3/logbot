@@ -1,18 +1,18 @@
 body {
     background-color: #F8F8FF;
-    font-family: arial, sans-serif;
+    font-family: Fixed, monospace;
     font-size: 13px;
 }
 
 .time {
-    color: #445588;
+    color: #525552;
+    text-decoration: none;
 }
 
-.person {
-    color: #DD1144;
-    font-weight: bold;
-}
+.time:hover { text-decoration: underline; }
 
-.kick {
-    color: #FF0000;
-}
+.person { color: #DD1144; }
+
+.join, .part, .quit, .kick, .mode { color: #42558C; }
+
+.notice { color: #AE768C; }

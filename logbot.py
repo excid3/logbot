@@ -63,7 +63,7 @@ class LogBot(object):
         self.owner = owner
         self.nick = nick
         self.folder = folder
-        self.stylesheet = "file:///" + os.path.abspath(stylesheet)
+        self.stylesheet = stylesheet
         
     def start(self):
         # Write logs locally, so we need the folder to exist
@@ -109,8 +109,8 @@ class LogBot(object):
         # event.source(), event.target(), event.arguments()
         person, reason = event.arguments()
         self.write(event.target(),
-                   "<span class=\"kick\">%s left the room (Kicked by %s (%s))</span>" % \
-                   (person, event.source().split("!")[0], reason))
+                   "-!- <span class=\"kick\">%s</span> was kicked from %s by %s [%s]" % \
+                   (person, event.target(), event.source().split("!")[0], reason))
         
     def handleMode(self, connection, event):
         """Handles mode changes
@@ -120,8 +120,8 @@ class LogBot(object):
         #print event.source(), event.target(), event.arguments()
         modes, person = event.arguments()
         self.write(event.target(), 
-    	           "<strong>Mode %s set on %s by %s</strong>" % \
-		           (modes, person, event.source().split("!")[0]))
+    	           "-!- mode/<span class=\"mode\">%s</span> [%s %s] by %s" % \
+		           (event.target(), modes, person, event.source().split("!")[0]))
         
     def handlePubNotice(self, connection, event):
         """Handles public notices
@@ -130,8 +130,8 @@ class LogBot(object):
         # user, channel, [msg]
         #print event.source(), event.target(), event.arguments()
         self.write(event.target(), 
-                   "- %s: %s -" % \
-                   (event.source().split("!")[0], event.arguments()[0]))
+                   "<span class=\"notice\">-%s:%s-</span> %s" % \
+                   (event.source().split("!")[0], event.target(), event.arguments()[0]))
 				   
     def handleQuit(self, connection, event):
         """Handles quite messages
@@ -140,7 +140,7 @@ class LogBot(object):
         # user, channel?, [reason]
         #print event.source(), event.target(), event.arguments()
         self.write(None,
-                   "<strong>%s has quit (%s)</strong>" % \
+                   "-!- <span class=\"quit\">%s</span> has quit [%s]" % \
                    (event.source().split("!")[0], event.arguments()[0]))
         
     def handlePrivMessage(self, connection, event):
@@ -162,7 +162,7 @@ class LogBot(object):
         nick = nick[0]
         
         self.write(event.target(),
-                   "<strong>%s (%s) has joined %s</strong>" % \
+                   "-!- <span class=\"join\">%s</span> (%s) has joined %s" % \
                    (nick, nickmask, event.target()))
         
     def handlePubMessage(self, connection, event):
@@ -171,7 +171,7 @@ class LogBot(object):
         """
         nick = event.source().split("!")[0]
         self.write(event.target(),
-                   "<span class=\"person\">%s:</span> %s" % \
+                   "<span class=\"person\">&lt; %s &gt;</span> %s" % \
                    (nick, event.arguments()[0]))
         
     def handlePart(self, connection, event):
@@ -180,7 +180,7 @@ class LogBot(object):
         """
         nick = event.source().split("!")[0]
         self.write(event.target(),
-                   "<span class=\"person\">%s</span> has parted %s" % \
+                   "-!- <span class=\"part\">%s</span> has parted %s" % \
                    (nick, event.target()))
              
     def handleInvite(self, connection, event):
@@ -198,7 +198,7 @@ class LogBot(object):
             self.server.join(channel)
             
     def write(self, channel, message):
-        time = strftime("[%H:%M:%S]")
+        time = strftime("%H:%M:%S")
         date = strftime("%d-%m-%Y")
         if channel:
             print "%s> %s %s" % (channel, time, message)
@@ -222,7 +222,7 @@ class LogBot(object):
                 f.close()
 
             data = open(path, "rb").readlines()[:-2]
-            data.append("<span class=\"time\">%s</span> %s<br />\n" % (time, message))
+            data.append("<a href=\"#%s\" name=\"%s\" class=\"time\">[%s]</a> %s<br />\n" % (time, time, time, message))
             data += ["  </body>\n", "</html>\n"]
             
             f = open(path, "wb")
