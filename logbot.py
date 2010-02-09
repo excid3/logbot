@@ -171,7 +171,7 @@ class LogBot(object):
         """
         nick = event.source().split("!")[0]
         self.write(event.target(),
-                   "<span class=\"person\">&lt; %s &gt;</span> %s" % \
+                   "<span class=\"person\">&lt;%s&gt;</span> %s" % \
                    (nick, event.arguments()[0]))
         
     def handlePart(self, connection, event):
