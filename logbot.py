@@ -25,7 +25,7 @@
 
 
 __author__ = "Chris Oliver <excid3@gmail.com>"
-__version__ = "0.2.1"
+__version__ = "0.3.0"
 __date__ = "08/11/2009"
 __copyright__ = "Copyright (c) Chris Oliver"
 __license__ = "GPL2"
@@ -33,12 +33,15 @@ __license__ = "GPL2"
 
 import os
 import os.path
-import irclib
+import shutil
 
 from ConfigParser import ConfigParser
 from ftplib import FTP
 from optparse import OptionParser
 from time import strftime
+
+from irclib import nm_to_n
+from ircbot import SingleServerIRCBot
 
 
 html_header = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
@@ -47,161 +50,99 @@ html_header = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     <title>%s</title>
-    <link href="%s" rel="stylesheet" type="text/css" />
+    <link href="stylesheet.css" rel="stylesheet" type="text/css" />
   </head>
   <body>
   </body>
 </html>
 """
 
+index_header = """<h1>%s</h1><br />"""
 
-class LogBot(object):
-    def __init__(self, network, port, channels, owner, nick, password, folder, stylesheet):
-        self.network = network
-        self.port = port
-        self.channels = channels
-        self.owner = owner
-        self.nick = nick
-        self.password = password
+
+class LogBot(SingleServerIRCBot):
+    def __init__(self, server, port, channels, owners, nickname, password):
+        """Initialize this badboy"""
+        SingleServerIRCBot.__init__(self, [(server, port, password)], 
+                                          nickname, 
+                                          nickname)
+        self.chans = channels
+    
+    def set_format(self, folder, format, stylesheet):
         self.folder = folder
+        self.format = format
         self.stylesheet = stylesheet
         
-    def start(self):
-        # Write logs locally, so we need the folder to exist
-        if not os.path.exists(self.folder):
-            os.mkdir(self.folder)
-        #os.chdir(self.folder)
+    def on_nicknameinuse(self, c, e):
+        """Append an underscore to the nick if it's already in use"""
+        c.nick(c.get_nickname() + "_")
+        
+    def on_welcome(self, c, e):
+        """Join the channels once we have made a successful connection"""
+        for channel in self.chans:
+            c.join(channel)
 
-        # Create an IRC object
-        self.irc = irclib.IRC()
-
-        # Setup the IRC functionality we want to log
-        handlers = {'join': self.handleJoin,
-                    'pubmsg': self.handlePubMessage,
-                    'privmsg': self.handlePrivMessage,
-                    'part': self.handlePart,
-                    'invite': self.handleInvite,
-                    'kick': self.handleKick,
-                    'mode': self.handleMode,
-                    'pubnotice': self.handlePubNotice,
-                    'quit': self.handleQuit}
-        for key, val in handlers.items():
-            self.irc.add_global_handler(key, val)
-
-        # Create a server object, connect and join the channel
-        self.server = self.irc.server()
-        self.server.connect(self.network, self.port, self.nick, ircname=self.nick)
-
-        if self.password:        
-            self.server.privmsg("nickserv", "identify %s" % self.password)
-
-        for channel in self.channels:
-            self.server.join(channel)
-
-        # Jump into an infinte loop
-        self.irc.process_forever()
+    def on_pubmsg(self, c, e):
+        user = nm_to_n(e.source())
+        message = e.arguments()[0]
+        channel = e.target()
+        self.write(channel, self.format["pubmsg"].replace("%user%", user) \
+                                                 .replace("%message%", message))
+                                         
+    def on_invite(self, c, e):
+        pass
     
-            #eventtype -- A string describing the event.
-            #source -- The originator of the event (a nick mask or a server).
-            #target -- The target of the event (a nick or a channel).
-            #arguments 
+    def on_join(self, c, e):
+        user = nm_to_n(e.source())
+        host = e.source()
+        channel = e.target()
+        self.write(channel, self.format["join"].replace("%user%", user) \
+                                               .replace("%host%", host) \
+                                               .replace("%channel%", channel))
+    
+    def on_kick(self, c, e):
+        kicker = e.source()
+        channel = e.target()
+        user, reason = e.arguments()
+        self.write(channel, self.format["kick"].replace("%kicker%", kicker) \
+                                               .replace("%channel%", channel) \
+                                               .replace("%user%", user) \
+                                               .replace("%reason%", reason))
+                                 
+    def on_mode(self, c, e):
+        modes, person = e.arguments()
+        channel = e.target()
+        giver = nm_to_n(e.source())
+        self.write(channel, self.format["mode"].replace("%channel%", channel) \
+                                               .replace("%modes%", modes) \
+                                               .replace("%person%", person) \
+                                               .replace("%giver%", giver))
+        
+    def on_part(self, c, e):
+        user = nm_to_n(e.source())
+        channel = e.target()
+        self.write(channel, self.format["part"].replace("%user%", user) \
+                                               .replace("%channel%", channel))
+                                 
+    def on_privmsg(self, c, e):
+        pass
+
+    def on_pubnotice(self, c, e):
+        user = nm_to_n(e.source())
+        channel = e.target()
+        message = e.arguments()[0]
+        self.write(channel, self.format["pubnotice"].replace("%user%", user) \
+                                              .replace("%channel%", channel) \
+                                              .replace("%message%", message))
             
-    def handleKick(self, connection, event):
-        """Handles kick messages
-        Writes messages to log
-        """
-        # kicker, channel, [person, reason]
-        # event.source(), event.target(), event.arguments()
-        person, reason = event.arguments()
-        self.write(event.target(),
-                   "-!- <span class=\"kick\">%s</span> was kicked from %s by %s [%s]" % \
-                   (person, event.target(), event.source().split("!")[0], reason))
-        
-    def handleMode(self, connection, event):
-        """Handles mode changes
-        Writes messages to log
-        """
-        # person giving ops, #channel, [modes, person]
-        #print event.source(), event.target(), event.arguments()
-        modes, person = event.arguments()
-        self.write(event.target(), 
-    	           "-!- mode/<span class=\"mode\">%s</span> [%s %s] by %s" % \
-		           (event.target(), modes, person, event.source().split("!")[0]))
-        
-    def handlePubNotice(self, connection, event):
-        """Handles public notices
-        Writes messages to log
-        """
-        # user, channel, [msg]
-        #print event.source(), event.target(), event.arguments()
-        self.write(event.target(), 
-                   "<span class=\"notice\">-%s:%s-</span> %s" % \
-                   (event.source().split("!")[0], event.target(), event.arguments()[0]))
-				   
-    def handleQuit(self, connection, event):
-        """Handles quite messages
-        Writes messages to log
-        """
-        # user, channel?, [reason]
-        #print event.source(), event.target(), event.arguments()
-        self.write(None,
-                   "-!- <span class=\"quit\">%s</span> has quit [%s]" % \
-                   (event.source().split("!")[0], event.arguments()[0]))
-        
-    def handlePrivMessage(self, connection, event):
-        """Handles private messages
-        Used for owners to send instructions to bot
-        """
-        # sender, receiver (me), [msg]
-        print "PRIVATE MESSGAE", event.source(), event.target(), event.arguments()
-        
-    def handleJoin(self, connection, event):
-        """Handles user join messages
-        Writes messages to log
-        """
-        nick = event.source().split("!")
-        try:
-            nickmask = nick[1]
-        except:
-            nickmask = "unknown"
-        nick = nick[0]
-        
-        self.write(event.target(),
-                   "-!- <span class=\"join\">%s</span> (%s) has joined %s" % \
-                   (nick, nickmask, event.target()))
-        
-    def handlePubMessage(self, connection, event):
-        """Handles public messages
-        Writes messages to log
-        """
-        nick = event.source().split("!")[0]
-        self.write(event.target(),
-                   "<span class=\"person\">&lt;%s&gt;</span> %s" % \
-                   (nick, event.arguments()[0]))
-        
-    def handlePart(self, connection, event):
-        """Handles part messages
-        Writes messages to log
-        """
-        nick = event.source().split("!")[0]
-        self.write(event.target(),
-                   "-!- <span class=\"part\">%s</span> has parted %s" % \
-                   (nick, event.target()))
-             
-    def handleInvite(self, connection, event):
-        """Handles invitations from IRC users
-        Only accept invites to join a channel if they are from an owner
-        """
-        nick = event.source().split("!")[0]
-        
-        # Only allow invites from owner(s)
-        if not nick in self.owner:
-            print "Invite from %s denied" % nick
-            return
-            
-        for channel in event.arguments():
-            self.server.join(channel)
-            
+    def on_quit(self, c, e):
+        user = nm_to_n(e.source())
+        reason = e.arguments()[0]
+        channel = e.target()
+        print channel
+        self.write(channel, self.format["quit"].replace("%user%", user) \
+                                               .replace("%reason%", reason))
+
     def write(self, channel, message):
         time = strftime("%H:%M:%S")
         date = strftime("%d-%m-%Y")
@@ -211,28 +152,59 @@ class LogBot(object):
         else:
             # Quits don't have channels
             print "%s %s" % (time, message)
-            channels = self.channels
+            channels = self.chans
+
+        if not os.path.exists(self.folder):
+            # Create the log folder if we need to
+            os.mkdir(self.folder)
+            index = os.path.join(self.folder, "index.html")
+            create_html_file(index, "Logged Channels")
+            append_to_index(index, index_header % "Logged Channels")
+            shutil.copy2(self.stylesheet, self.folder)
 
         for channel in channels:
             path = os.path.abspath(os.path.join(self.folder, channel))
+            
             if not os.path.exists(path):
-                # Create the folder if it doesn't exist
                 os.mkdir(path)
+                
+            if not os.path.exists(os.path.join(path, "stylesheet.css")):
+                shutil.copy2(self.stylesheet, path)
             
+            chan_index = os.path.join(path, "index.html")
             path = os.path.join(path, date+".html")
-            if not os.path.exists(path):
-                # Create the html header
-                f = open(path, "wb")
-                f.write(html_header % (("%s | Logs for %s" % (channel, date)), self.stylesheet))
-                f.close()
+            if not os.path.exists(path):                
+                create_html_file(chan_index, "%s | Logs" % channel)
+                append_to_index(chan_index, index_header % "%s | Logs" % channel)
+                
+                append_to_index(index, "<a href=\"%%23%s\">%s</a>" % \
+                                       (channel[1:]+"/index.html", channel))
+                                       
+                create_html_file(path, "%s | Logs for %s" % (channel, date))
+                append_to_index(chan_index, "<a href=\"%s\">%s</a>" % \
+                                            (date+".html", date))
 
-            data = open(path, "rb").readlines()[:-2]
-            data.append("<a href=\"#%s\" name=\"%s\" class=\"time\">[%s]</a> %s<br />\n" % (time, time, time, message))
-            data += ["  </body>\n", "</html>\n"]
-            
-            f = open(path, "wb")
-            f.writelines(data)
-            
+            str = "<a href=\"#%s\" name=\"%s\" class=\"time\">[%s]</a> %s" % \
+                                              (time, time, time, message)
+            append_to_index(path, str)        
+
+
+def create_html_file(path, title):
+    f = open(path, "wb")
+    f.write(html_header % title)
+    f.close()
+
+
+def append_to_index(path, line):
+    data = open(path, "rb").readlines()[:-2]
+    data.append(line + "<br />\n")
+    data += ["  </body>\n", "</html>\n"]
+    
+    f = open(path, "wb")
+    f.writelines(data)
+    f.close()
+
+
 def main(conf):
     """
     Start the bot using a config file.
@@ -242,29 +214,37 @@ def main(conf):
     """
     CONFIG = ConfigParser()
     CONFIG.read(conf)
-    network = CONFIG.get('irc', 'network')
-    port = CONFIG.getint('irc', 'port')
-    channels = CONFIG.get('irc', 'channels').split(',')
-    nick = CONFIG.get('irc', 'nick')
+    
+    # Get the irc network configuration
+    server = CONFIG.get("irc", "server")
+    port = CONFIG.getint("irc", "port")
+    channels = CONFIG.get("irc", "channels").split(",")
+    nick = CONFIG.get("irc", "nick")
     try:
-        password = CONFIG.get('irc', 'password')
+        password = CONFIG.get("irc", "password")
     except:
         password = None
-    owner = CONFIG.get('irc', 'owners').split(',')
-    logs_folder = CONFIG.get('log', 'folder')
-    stylesheet = CONFIG.get('log', 'stylesheet')
+    owner = CONFIG.get("irc", "owners").split(",")
+    
+    # Get the log section
+    folder = CONFIG.get("log", "folder")
+    stylesheet = CONFIG.get("log", "stylesheet")
+    
+    # Get the formation information
+    types = ["join", "kick", "mode", "part", "pubmsg", "pubnotice", "quit"]
+    format = {}
+    for type in types:
+        format[type] = CONFIG.get("format", type)
+        
+    bot = LogBot(server, port, channels, owner, nick, password)
+    bot.set_format(folder, format, stylesheet)
+    bot.start()
 
-    bot = LogBot(network, port, channels, owner, nick, password, logs_folder, stylesheet)
-    try:
-        bot.start()
-    except KeyboardInterrupt:
-        pass
 
-		
-if __name__ == '__main__':
+if __name__ == "__main__":
     # Require a config
     parser = OptionParser()
-    parser.add_option('-c', '--config', dest='conf', help='Config to use')
+    parser.add_option("-c", "--config", dest="conf", help="Config to use")
     (options, args) = parser.parse_args()
 
     if not options.conf or not os.access(options.conf, os.R_OK):
