@@ -154,10 +154,10 @@ class LogBot(SingleServerIRCBot):
             print "%s %s" % (time, message)
             channels = self.chans
 
+        index = os.path.join(self.folder, "index.html")
         if not os.path.exists(self.folder):
             # Create the log folder if we need to
             os.mkdir(self.folder)
-            index = os.path.join(self.folder, "index.html")
             create_html_file(index, "Logged Channels")
             append_to_index(index, index_header % "Logged Channels")
             shutil.copy2(self.stylesheet, self.folder)
@@ -186,7 +186,7 @@ class LogBot(SingleServerIRCBot):
 
             str = "<a href=\"#%s\" name=\"%s\" class=\"time\">[%s]</a> %s" % \
                                               (time, time, time, message)
-            append_to_index(path, str)        
+            append_to_index(path, str, True)        
 
 
 def create_html_file(path, title):
@@ -195,9 +195,10 @@ def create_html_file(path, title):
     f.close()
 
 
-def append_to_index(path, line):
-    data = open(path, "rb").readlines()[:-2]
-    data.append(line + "<br />\n")
+def append_to_index(path, line, br=False, back=-2):
+    data = open(path, "rb").readlines()[:back]
+    if br: data += [line + "<br />\n"]
+    else:  data += [line + "\n"]
     data += ["  </body>\n", "</html>\n"]
     
     f = open(path, "wb")

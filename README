@@ -1,0 +1,9 @@
+LogBot 0.3.0
+------------
+
+Author: Chris Oliver <chris@excid3.com>
+
+
+Usage
+-----
+python logbot.py -c conf/example.conf
