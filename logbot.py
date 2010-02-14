@@ -2,7 +2,7 @@
 """
    LogBot
 
-   A minimal IRC log bot with FTP uploads
+   A minimal IRC log bot
 
    Written by Chris Oliver
 
