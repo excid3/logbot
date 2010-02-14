@@ -7,3 +7,5 @@ Author: Chris Oliver <chris@excid3.com>
 Usage
 -----
 python logbot.py -c conf/example.conf
+
+Example logs at http://excid3.com/logs
