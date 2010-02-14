@@ -19,6 +19,6 @@ a:hover, .time:hover { text-decoration: underline; }
 
 .person { color: #DD1144; }
 
-.join, .part, .quit, .kick, .mode { color: #42558C; }
+.join, .part, .quit, .kick, .mode, .topic, .nick { color: #42558C; }
 
 .notice { color: #AE768C; }

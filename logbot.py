@@ -127,6 +127,20 @@ class LogBot(SingleServerIRCBot):
     def on_privmsg(self, c, e):
         pass
 
+    def on_topic(self, c, e):
+        user = nm_to_n(e.source())
+        channel = e.target()
+        topic = e.arguments()[0]
+        self.write(channel, self.format["topic"].replace("%user%", user) \
+                                                .replace("%channel%", channel) \
+                                                .replace("%topic%", topic))
+
+    def on_nick(self, c, e):
+        new = nm_to_n(e.source())
+        old = e.target()
+        self.write(channel, self.format["nick"].replace("%old%", old) \
+                                               .replace("%new%", new))
+
     def on_pubnotice(self, c, e):
         user = nm_to_n(e.source())
         channel = e.target()
@@ -232,7 +246,8 @@ def main(conf):
     stylesheet = CONFIG.get("log", "stylesheet")
     
     # Get the formation information
-    types = ["join", "kick", "mode", "part", "pubmsg", "pubnotice", "quit"]
+    types = ["join", "kick", "mode", "part", "pubmsg", "pubnotice", "quit",
+             "topic"]
     format = {}
     for type in types:
         format[type] = CONFIG.get("format", type)
