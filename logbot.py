@@ -138,7 +138,7 @@ class LogBot(SingleServerIRCBot):
     def on_nick(self, c, e):
         new = nm_to_n(e.source())
         old = e.target()
-        self.write(channel, self.format["nick"].replace("%old%", old) \
+        self.write(None, self.format["nick"].replace("%old%", old) \
                                                .replace("%new%", new))
 
     def on_pubnotice(self, c, e):
@@ -153,7 +153,6 @@ class LogBot(SingleServerIRCBot):
         user = nm_to_n(e.source())
         reason = e.arguments()[0]
         channel = e.target()
-        print channel
         self.write(channel, self.format["quit"].replace("%user%", user) \
                                                .replace("%reason%", reason))
 
@@ -164,7 +163,7 @@ class LogBot(SingleServerIRCBot):
             print "%s> %s %s" % (channel, time, message)
             channels = [channel]
         else:
-            # Quits don't have channels
+            # Quit/nick don't have channels
             print "%s %s" % (time, message)
             channels = self.chans
 
@@ -246,8 +245,8 @@ def main(conf):
     stylesheet = CONFIG.get("log", "stylesheet")
     
     # Get the formation information
-    types = ["join", "kick", "mode", "part", "pubmsg", "pubnotice", "quit",
-             "topic"]
+    types = ["join", "kick", "mode", "nick", "part", "pubmsg", "pubnotice", 
+             "quit", "topic"]
     format = {}
     for type in types:
         format[type] = CONFIG.get("format", type)
