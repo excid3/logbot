@@ -171,6 +171,8 @@ class LogBot(SingleServerIRCBot):
         if not os.path.exists(self.folder):
             # Create the log folder if we need to
             os.mkdir(self.folder)
+
+        if not os.path.exists(index):
             create_html_file(index, "Logged Channels")
             append_to_index(index, index_header % "Logged Channels")
             shutil.copy2(self.stylesheet, self.folder)
