@@ -110,7 +110,7 @@ class LogBot(SingleServerIRCBot):
                                                .replace("%reason%", reason))
                                  
     def on_mode(self, c, e):
-        modes, person = e.arguments()
+        modes, person = e.arguments()[:2]
         channel = e.target()
         giver = nm_to_n(e.source())
         self.write(channel, self.format["mode"].replace("%channel%", channel) \
