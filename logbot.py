@@ -66,11 +66,12 @@ def gen_color(user):
 
 
 class LogBot(SingleServerIRCBot):
-    def __init__(self, server, port, channels, owners, nickname, password):
+    def __init__(self, server, port, server_pass, channels, owners, nickname, nick_pass):
         """Initialize this badboy"""
-        SingleServerIRCBot.__init__(self, [(server, port, password)], 
+        SingleServerIRCBot.__init__(self, [(server, port, server_pass)], 
                                           nickname, 
                                           nickname)
+        self.nick_pass = nick_pass
         self.chans = channels
     
     def set_format(self, folder, format, stylesheet):
@@ -84,6 +85,8 @@ class LogBot(SingleServerIRCBot):
         
     def on_welcome(self, c, e):
         """Join the channels once we have made a successful connection"""
+        if self.nick_pass:
+            c.privmsg("nickserv", "identify %s" % self.nick_pass)
         for channel in self.chans:
             c.join(channel)
 
@@ -243,11 +246,11 @@ def main(conf):
     port = CONFIG.getint("irc", "port")
     channels = CONFIG.get("irc", "channels").split(",")
     nick = CONFIG.get("irc", "nick")
-    try:
-        password = CONFIG.get("irc", "password")
-    except:
-        password = None
-    owner = CONFIG.get("irc", "owners").split(",")
+    try:    server_pass = CONFIG.get("irc", "server_password")
+    except: server_pass = None
+    try:    nick_pass = CONFIG.get("irc", "nick_password")
+    except: nick_pass = None
+    owner = [x.strip() for x in CONFIG.get("irc", "owners").split(",")]
     
     # Get the log section
     folder = CONFIG.get("log", "folder")
@@ -260,7 +263,7 @@ def main(conf):
     for type in types:
         format[type] = CONFIG.get("format", type)
         
-    bot = LogBot(server, port, channels, owner, nick, password)
+    bot = LogBot(server, port, server_pass, channels, owner, nick, nick_pass)
     bot.set_format(folder, format, stylesheet)
     bot.start()
 
