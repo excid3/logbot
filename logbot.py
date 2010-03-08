@@ -36,9 +36,9 @@ import os.path
 import shutil
 
 from ConfigParser import ConfigParser
-from ftplib import FTP
 from optparse import OptionParser
 from time import strftime
+from hashlib import md5
 
 from irclib import nm_to_n
 from ircbot import SingleServerIRCBot
@@ -58,6 +58,11 @@ html_header = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
 """
 
 index_header = """<h1>%s</h1><br />"""
+
+
+def gen_color(user):
+    """Generates a color based on hash of username"""
+    return '#%s' % md5(user).hexdigest()[:6]
 
 
 class LogBot(SingleServerIRCBot):
@@ -86,8 +91,10 @@ class LogBot(SingleServerIRCBot):
         user = nm_to_n(e.source())
         message = e.arguments()[0]
         channel = e.target()
+        color = gen_color(user)
         self.write(channel, self.format["pubmsg"].replace("%user%", user) \
-                                                 .replace("%message%", message))
+                                                 .replace("%message%", message) \
+                                                 .replace("%color%", color))
                                          
     def on_invite(self, c, e):
         pass
