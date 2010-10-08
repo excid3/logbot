@@ -73,6 +73,9 @@ class LogBot(SingleServerIRCBot):
                                           nickname)
         self.nick_pass = nick_pass
         self.chans = channels
+
+        print "Logbot %s" % __version__
+        print "Connecting to %s:%i" % (server, port)
     
     def set_format(self, folder, format, stylesheet):
         self.folder = folder
@@ -89,6 +92,9 @@ class LogBot(SingleServerIRCBot):
             c.privmsg("nickserv", "identify %s" % self.nick_pass)
         for channel in self.chans:
             c.join(channel)
+            
+        print "Connected"
+        print "Press Ctrl-C to quit"
 
     def on_pubmsg(self, c, e):
         user = nm_to_n(e.source())
@@ -100,7 +106,16 @@ class LogBot(SingleServerIRCBot):
                                                  .replace("%color%", color))
                                          
     def on_invite(self, c, e):
-        pass
+        c.join(e.arguments()[0])
+    
+    def on_action(self, c, e):
+        user = nm_to_n(e.source())
+        action = e.arguments()[0]
+        channel = e.target()
+        color = gen_color(user)
+        self.write(channel, self.format["action"].replace("%user%", user) \
+                                                 .replace("%action%", action) \
+                                                 .replace("%color%", color))
     
     def on_join(self, c, e):
         user = nm_to_n(e.source())
@@ -130,12 +145,14 @@ class LogBot(SingleServerIRCBot):
         
     def on_part(self, c, e):
         user = nm_to_n(e.source())
+        host = e.source()
         channel = e.target()
         self.write(channel, self.format["part"].replace("%user%", user) \
+                                               .replace("%host%", host) \
                                                .replace("%channel%", channel))
                                  
     def on_privmsg(self, c, e):
-        pass
+        c.privmsg(nm_to_n(e.source()), self.format["help"])
 
     def on_topic(self, c, e):
         user = nm_to_n(e.source())
@@ -168,7 +185,7 @@ class LogBot(SingleServerIRCBot):
 
     def write(self, channel, message):
         time = strftime("%H:%M:%S")
-        date = strftime("%d-%m-%Y")
+        date = strftime("%Y-%m-%d")
         if channel:
             print "%s> %s %s" % (channel, time, message)
             channels = [channel]
@@ -211,7 +228,7 @@ class LogBot(SingleServerIRCBot):
 
             str = "<a href=\"#%s\" name=\"%s\" class=\"time\">[%s]</a> %s" % \
                                               (time, time, time, message)
-            append_to_index(path, str, True)        
+            append_to_index(path, str, True)
 
 
 def create_html_file(path, title):
@@ -258,15 +275,15 @@ def main(conf):
     
     # Get the formation information
     types = ["join", "kick", "mode", "nick", "part", "pubmsg", "pubnotice", 
-             "quit", "topic"]
+             "quit", "topic", "action"]
     format = {}
     for type in types:
         format[type] = CONFIG.get("format", type)
         
     bot = LogBot(server, port, server_pass, channels, owner, nick, nick_pass)
     bot.set_format(folder, format, stylesheet)
-    bot.start()
-
+    try:                      bot.start()
+    except KeyboardInterrupt: pass
 
 if __name__ == "__main__":
     # Require a config
