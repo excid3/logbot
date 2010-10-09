@@ -187,22 +187,23 @@ class LogBot(SingleServerIRCBot):
         time = strftime("%H:%M:%S")
         date = strftime("%Y-%m-%d")
         if channel:
-            print "%s> %s %s" % (channel, time, message)
+            #print "%s> %s %s" % (channel, time, message)
             channels = [channel]
         else:
             # Quit/nick don't have channels
-            print "%s %s" % (time, message)
+            #print "%s %s" % (time, message)
             channels = self.chans
 
-        index = os.path.join(self.folder, "index.html")
+        # Create the log folder if we need to
+
         if not os.path.exists(self.folder):
-            # Create the log folder if we need to
             os.mkdir(self.folder)
 
-        if not os.path.exists(index):
-            create_html_file(index, "Logged Channels")
-            append_to_index(index, index_header % "Logged Channels")
-            shutil.copy2(self.stylesheet, self.folder)
+        #index = os.path.join(self.folder, "index.html")
+        #if not os.path.exists(index):
+        #    create_html_file(index, "Logged Channels")
+        #    append_to_index(index, index_header % "Logged Channels")
+        #    shutil.copy2(self.stylesheet, self.folder)
 
         for channel in channels:
             path = os.path.abspath(os.path.join(self.folder, channel))
@@ -213,18 +214,18 @@ class LogBot(SingleServerIRCBot):
             if not os.path.exists(os.path.join(path, "stylesheet.css")):
                 shutil.copy2(self.stylesheet, path)
             
-            chan_index = os.path.join(path, "index.html")
+            #chan_index = os.path.join(path, "index.html")
             path = os.path.join(path, date+".html")
             if not os.path.exists(path):                
-                create_html_file(chan_index, "%s | Logs" % channel)
-                append_to_index(chan_index, index_header % "%s | Logs" % channel)
+                #create_html_file(chan_index, "%s | Logs" % channel)
+                #append_to_index(chan_index, index_header % "%s | Logs" % channel)
                 
-                append_to_index(index, "<a href=\"%%23%s\">%s</a>" % \
-                                       (channel[1:]+"/index.html", channel))
+                #append_to_index(index, "<a href=\"%%23%s\">%s</a>" % \
+                #                       (channel[1:]+"/index.html", channel))
                                        
                 create_html_file(path, "%s | Logs for %s" % (channel, date))
-                append_to_index(chan_index, "<a href=\"%s\">%s</a>" % \
-                                            (date+".html", date))
+                #append_to_index(chan_index, "<a href=\"%s\">%s</a>" % \
+                #                            (date+".html", date))
 
             str = "<a href=\"#%s\" name=\"%s\" class=\"time\">[%s]</a> %s" % \
                                               (time, time, time, message)
