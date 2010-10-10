@@ -50,7 +50,7 @@ DEBUG = False
 SERVER = "irc.freenode.net"
 PORT = 6667
 SERVER_PASS = None
-CHANNELS=["#excid3"]
+CHANNELS=["#keryx"]
 NICK = "timber"
 NICK_PASS = None
 
