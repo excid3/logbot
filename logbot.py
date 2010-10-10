@@ -144,9 +144,6 @@ class Logbot(SingleServerIRCBot):
         return "#%s" % md5(user).hexdigest()[:6]
 
     def format_event(self, name, event, params):
-        print event.target()
-        print event.source()
-        print event.arguments()
         msg = self.format[name]
         for key, val in params.iteritems():
             msg = msg.replace(key, val)
