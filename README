@@ -6,6 +6,8 @@ Author: Chris Oliver <chris@excid3.com>
 
 Usage
 -----
-python logbot.py -c conf/example.conf
+python logbot.py
+
+Configuration is done inside logbot.py
 
 Example logs at http://excid3.com/logs
