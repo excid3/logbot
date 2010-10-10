@@ -138,7 +138,7 @@ class Logbot(SingleServerIRCBot):
         print "Press Ctrl-C to quit"                         
 
     def quit(self):
-        bot.connection.disconnect("Quitting...")
+        self.connection.disconnect("Quitting...")
           
     def color(self, user):
         return "#%s" % md5(user).hexdigest()[:6]
@@ -281,7 +281,7 @@ def main():
         write_string("logs/index.html", html_header.replace("%title%", "Chat Logs"))
     
     # Start the bot
-    bot = Logbot(SERVER, PORT, CHANNELS)
+    bot = Logbot(SERVER, PORT, SERVER_PASS, CHANNELS, NICK, NICK_PASS)
     try:
         bot.start()
     except KeyboardInterrupt:
