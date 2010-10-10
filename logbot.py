@@ -130,7 +130,7 @@ class Logbot(SingleServerIRCBot):
                                     nick,
                                     nick)
                                     
-        self.chans = channels
+        self.chans = [x.lower() for x in channels]
         self.format = format
         
         print "Logbot %s" % __version__
@@ -251,8 +251,8 @@ class Logbot(SingleServerIRCBot):
                          
     def on_nick(self, c, e):
         self.write_event("nick", e,
-                         {"%new%" : nm_to_n(e.source()),
-                          "%old%" : e.target(),
+                         {"%old%" : nm_to_n(e.source()),
+                          "%new%" : e.target(),
                          })
         
     def on_part(self, c, e):
