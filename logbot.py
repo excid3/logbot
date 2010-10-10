@@ -50,7 +50,7 @@ DEBUG = False
 SERVER = "irc.freenode.net"
 PORT = 6667
 SERVER_PASS = None
-CHANNELS=["#keryx"]
+CHANNELS=["#excid3"]
 NICK = "timber"
 NICK_PASS = None
 
@@ -144,6 +144,9 @@ class Logbot(SingleServerIRCBot):
         return "#%s" % md5(user).hexdigest()[:6]
 
     def format_event(self, name, event, params):
+        print event.target()
+        print event.source()
+        print event.arguments()
         msg = self.format[name]
         for key, val in params.iteritems():
             msg = msg.replace(key, val)
@@ -166,7 +169,7 @@ class Logbot(SingleServerIRCBot):
         msg = self.format_event(name, event, params)
         
         # Quit goes across all channels
-        if not chans:
+        if not chans or not chans.startswith("#"):
             chans = self.chans
         else:
             chans = [chans]
