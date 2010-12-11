@@ -55,6 +55,8 @@ CHANNELS=["#excid3"]
 NICK = "timber"
 NICK_PASS = ""
 
+HELP_MESSAGE = "Check out http://excid3.com"
+
 FTP_SERVER = "excid3.fivebean.net"
 FTP_USER = "excidfiv"
 FTP_PASS = "./:j7JW}y*;.a4'8/|kBA.tUC"
@@ -63,8 +65,8 @@ FTP_WAIT = 25
 # Only upload every 25 messages
 
 default_format = {
+    "help" : HELP_MESSAGE,
     "action" : '<span class="person" style="color:%color%">* %user% %message%</span>',
-    "help" : 'Check out http://excid3.com',
     "join" : '-!- <span class="join">%user%</span> [%host%] has joined %channel%',
     "kick" : '-!- <span class="kick">%user%</span> was kicked from %channel% by %kicker% [%reason%]',
     "mode" : '-!- mode/<span class="mode">%channel%</span> [%modes% %person%] by %giver%',
@@ -288,6 +290,8 @@ class Logbot(SingleServerIRCBot):
         self.write_event("part", e)
 
     def on_pubmsg(self, c, e):
+        if e.arguments()[0].startswith(NICK):
+            c.privmsg(e.target(), self.format["help"])
         self.write_event("pubmsg", e)
         
     def on_pubnotice(self, c, e):
