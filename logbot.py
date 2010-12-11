@@ -105,6 +105,7 @@ html_header = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
   </head>
   <body>
   <h1>%title%</h1>
+  <a href="..">Back</a>
   </body>
 </html>
 """
@@ -189,7 +190,7 @@ class Logbot(SingleServerIRCBot):
 
         self.count += 1
 
-        if self.ftp and self.count > 25:
+        if self.ftp and self.count > FTP_WAIT:
             self.count = 0
             print "Uploading to FTP..."
             for root, dirs, files in os.walk("logs"):
