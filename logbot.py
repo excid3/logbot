@@ -51,14 +51,16 @@ DEBUG = False
 SERVER = "irc.freenode.net"
 PORT = 6667
 SERVER_PASS = None
-CHANNELS=["#keryx"]
+CHANNELS=["#excid3"]
 NICK = "timber"
 NICK_PASS = ""
 
-FTP_SERVER = ""
-FTP_USER = ""
-FTP_PASS = ""
-FTP_FOLDER = ""
+FTP_SERVER = "excid3.fivebean.net"
+FTP_USER = "excidfiv"
+FTP_PASS = "./:j7JW}y*;.a4'8/|kBA.tUC"
+FTP_FOLDER = "public_html/excid3.com/logs"
+FTP_WAIT = 25
+# Only upload every 25 messages
 
 default_format = {
     "action" : '<span class="person" style="color:%color%">* %user% %message%</span>',
@@ -189,13 +191,16 @@ class Logbot(SingleServerIRCBot):
 
         if self.ftp and self.count > 25:
             self.count = 0
-
+            print "Uploading to FTP..."
             for root, dirs, files in os.walk("logs"):
                 #TODO: Create folders
 
                 for fname in files:
                     full_fname = os.path.join(root, fname)
-                    self.ftp.storbinary("STOR %s" % fname, open(full_fname, "rb"))
+
+                    remote_fname = "/".join(full_fname.split("/")[1:])
+                    self.ftp.storbinary("STOR %s" % remote_fname, open(full_fname, "rb"))
+            print "Finished uploading"
         
     def append_log_msg(self, channel, msg):
         print "%s >>> %s" % (channel, msg)
@@ -288,6 +293,7 @@ class Logbot(SingleServerIRCBot):
         self.write_event("pubnotice", e)
         
     def on_privmsg(self, c, e):
+        print nm_to_n(e.source()), e.arguments()
         c.privmsg(nm_to_n(e.source()), self.format["help"])
         
     def on_quit(self, c, e):
@@ -308,6 +314,7 @@ def main():
     try:
         # Connect to FTP
         if FTP_SERVER:
+            print "Using FTP %s..." % (FTP_SERVER)
             f = FTP(FTP_SERVER, FTP_USER, FTP_PASS)
             f.cwd(FTP_FOLDER)
             bot.set_ftp(f)
