@@ -32,6 +32,7 @@ __license__ = "GPL2"
 
 
 import os
+from ftplib import FTP
 from time import strftime
 
 try:
@@ -52,7 +53,12 @@ PORT = 6667
 SERVER_PASS = None
 CHANNELS=["#keryx"]
 NICK = "timber"
-NICK_PASS = None
+NICK_PASS = ""
+
+FTP_SERVER = ""
+FTP_USER = ""
+FTP_PASS = ""
+FTP_FOLDER = ""
 
 default_format = {
     "action" : '<span class="person" style="color:%color%">* %user% %message%</span>',
@@ -132,6 +138,8 @@ class Logbot(SingleServerIRCBot):
                                     
         self.chans = [x.lower() for x in channels]
         self.format = format
+        self.set_ftp()
+        self.count = 0
         
         print "Logbot %s" % __version__
         print "Connecting to %s:%i..." % (server, port)
@@ -142,6 +150,9 @@ class Logbot(SingleServerIRCBot):
           
     def color(self, user):
         return "#%s" % md5(user).hexdigest()[:6]
+
+    def set_ftp(self, ftp=None):
+        self.ftp = ftp
 
     def format_event(self, name, event, params):
         msg = self.format[name]
@@ -173,6 +184,18 @@ class Logbot(SingleServerIRCBot):
         
         for chan in chans:
             self.append_log_msg(chan, msg)
+
+        self.count += 1
+
+        if self.ftp and self.count > 25:
+            self.count = 0
+
+            for root, dirs, files in os.walk("logs"):
+                #TODO: Create folders
+
+                for fname in files:
+                    full_fname = os.path.join(root, fname)
+                    self.ftp.storbinary("STOR %s" % fname, open(full_fname, "rb"))
         
     def append_log_msg(self, channel, msg):
         print "%s >>> %s" % (channel, msg)
@@ -283,8 +306,15 @@ def main():
     # Start the bot
     bot = Logbot(SERVER, PORT, SERVER_PASS, CHANNELS, NICK, NICK_PASS)
     try:
+        # Connect to FTP
+        if FTP_SERVER:
+            f = FTP(FTP_SERVER, FTP_USER, FTP_PASS)
+            f.cwd(FTP_FOLDER)
+            bot.set_ftp(f)
+
         bot.start()
     except KeyboardInterrupt:
+        if FTP_SERVER: f.quit()
         bot.quit()
     
 
