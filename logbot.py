@@ -51,16 +51,18 @@ DEBUG = False
 SERVER = "irc.freenode.net"
 PORT = 6667
 SERVER_PASS = None
-CHANNELS=["#excid3"]
+CHANNELS=["#excid3","#keryx"]
 NICK = "timber"
 NICK_PASS = ""
 
 HELP_MESSAGE = "Check out http://excid3.com"
 
-FTP_SERVER = "excid3.fivebean.net"
-FTP_USER = "excidfiv"
-FTP_PASS = "./:j7JW}y*;.a4'8/|kBA.tUC"
-FTP_FOLDER = "public_html/excid3.com/logs"
+FTP_SERVER = ""
+FTP_USER = ""
+FTP_PASS = ""
+FTP_FOLDER = ""
+# This folder and sub folders for any channels MUST be created on the server
+
 FTP_WAIT = 25
 # Only upload every 25 messages
 
