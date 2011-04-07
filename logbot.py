@@ -147,6 +147,7 @@ class Logbot(SingleServerIRCBot):
         self.format = format
         self.set_ftp()
         self.count = 0
+        self.nick_pass = nick_pass
         
         print "Logbot %s" % __version__
         print "Connecting to %s:%i..." % (server, port)
@@ -246,6 +247,9 @@ class Logbot(SingleServerIRCBot):
         
     def on_welcome(self, c, e):
         """Join channels after successful connection"""
+        if self.nick_pass:
+          c.privmsg("nickserv", "identify %s" % self.nick_pass)
+
         for chan in self.chans:
             c.join(chan)
             
