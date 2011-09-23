@@ -282,7 +282,7 @@ class Logbot(SingleServerIRCBot):
     def on_mode(self, c, e):
         self.write_event("mode", e,
                          {"%modes%" : e.arguments()[0],
-                          "%person%" : e.arguments()[1] if len(e.arguments()) > 1 else "",
+                          "%person%" : e.arguments()[1] if len(e.arguments()) > 1 else e.target(),
                           "%giver%" : nm_to_n(e.source()),
                          })
 
