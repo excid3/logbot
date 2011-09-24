@@ -31,6 +31,7 @@ __copyright__ = "Copyright (c) Chris Oliver"
 __license__ = "GPL2"
 
 
+import cgi
 import os
 from ftplib import FTP
 from time import strftime
@@ -174,7 +175,7 @@ class Logbot(SingleServerIRCBot):
         try: msg = msg.replace("%channel%", event.target())
         except: pass
         msg = msg.replace("%color%", self.color(nm_to_n(event.source())))
-        try: msg = msg.replace("%message%", event.arguments()[0])
+        try: msg = msg.replace("%message%", cgi.escape(event.arguments()[0]))
         except: pass
 
         return msg
