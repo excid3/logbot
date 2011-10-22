@@ -1,4 +1,4 @@
-LogBot 0.4.0
+LogBot 0.4.1
 ------------
 
 Author: Chris Oliver <chris@excid3.com>
@@ -10,4 +10,4 @@ python logbot.py
 
 Configuration is done inside logbot.py
 
-Example logs at http://excid3.com/logs
+Example logs at https://raw.github.com/excid3/logbot/master/example_logs/2011-10-22.html
