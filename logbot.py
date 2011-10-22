@@ -25,7 +25,7 @@
 
 
 __author__ = "Chris Oliver <excid3@gmail.com>"
-__version__ = "0.4.0"
+__version__ = "0.4.1"
 __date__ = "08/11/2009"
 __copyright__ = "Copyright (c) Chris Oliver"
 __license__ = "GPL2"
@@ -110,7 +110,7 @@ html_header = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
   </head>
   <body>
   <h1>%title%</h1>
-  <a href="..">Back</a>
+  <a href="..">Back</a><br />
   </body>
 </html>
 """
