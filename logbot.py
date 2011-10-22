@@ -33,7 +33,7 @@ __license__ = "GPL2"
 
 import cgi
 import os
-from ftplib import FTP
+import ftplib
 from time import strftime
 
 try:
@@ -206,7 +206,16 @@ class Logbot(SingleServerIRCBot):
                     full_fname = os.path.join(root, fname)
 
                     remote_fname = "/".join(full_fname.split("/")[1:])
-                    self.ftp.storbinary("STOR %s" % remote_fname, open(full_fname, "rb"))
+                    print remote_fname
+                    try:
+                        self.ftp.storbinary("STOR %s" % remote_fname, open(full_fname, "rb"))
+                    except ftplib.error_perm, e:
+                        code, error = str(e).split(" ", 1)
+                        if code == "553":
+                            self.ftp.mkd(os.path.dirname(remote_fname))
+                            self.ftp.storbinary("STOR %s" % remote_fname, open(full_fname, "rb"))
+                        else:
+                            raise e
             print "Finished uploading"
 
     def append_log_msg(self, channel, msg):
@@ -327,7 +336,7 @@ def main():
         # Connect to FTP
         if FTP_SERVER:
             print "Using FTP %s..." % (FTP_SERVER)
-            f = FTP(FTP_SERVER, FTP_USER, FTP_PASS)
+            f = ftplib.FTP(FTP_SERVER, FTP_USER, FTP_PASS)
             f.cwd(FTP_FOLDER)
             bot.set_ftp(f)
 
