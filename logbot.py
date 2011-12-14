@@ -82,7 +82,7 @@ default_format = {
 }
 
 html_header = """<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"> 
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
@@ -216,6 +216,9 @@ class Logbot(SingleServerIRCBot):
                             self.ftp.storbinary("STOR %s" % remote_fname, open(full_fname, "rb"))
                         else:
                             raise e
+                    except ftplib.error_temp, e: # Reconnect on timeout
+                        self.set_ftp(connect_ftp())
+
             print "Finished uploading"
 
     def append_log_msg(self, channel, msg):
@@ -324,6 +327,12 @@ class Logbot(SingleServerIRCBot):
         self.write_event("topic", e)
 
 
+def connect_ftp():
+    print "Using FTP %s..." % (FTP_SERVER)
+    f = ftplib.FTP(FTP_SERVER, FTP_USER, FTP_PASS)
+    f.cwd(FTP_FOLDER)
+    return f
+
 def main():
     # Create the logs directory
     if not os.path.exists("logs"):
@@ -335,14 +344,11 @@ def main():
     try:
         # Connect to FTP
         if FTP_SERVER:
-            print "Using FTP %s..." % (FTP_SERVER)
-            f = ftplib.FTP(FTP_SERVER, FTP_USER, FTP_PASS)
-            f.cwd(FTP_FOLDER)
-            bot.set_ftp(f)
+            bot.set_ftp(connect_ftp())
 
         bot.start()
     except KeyboardInterrupt:
-        if FTP_SERVER: f.quit()
+        if FTP_SERVER: bot.ftp.quit()
         bot.quit()
 
 
