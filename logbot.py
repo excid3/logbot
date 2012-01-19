@@ -207,6 +207,7 @@ class Logbot(SingleServerIRCBot):
 
                     remote_fname = "/".join(full_fname.split("/")[1:])
                     if DEBUG: print repr(remote_fname)
+                    if not remote_fname: continue
                     try:
                         self.ftp.storbinary("STOR %s" % remote_fname, open(full_fname, "rb"))
                     except ftplib.error_perm, e:
