@@ -34,6 +34,7 @@ __license__ = "GPL2"
 import cgi
 import os
 import ftplib
+import sys
 from time import strftime
 
 try:
@@ -205,8 +206,12 @@ class Logbot(SingleServerIRCBot):
                 for fname in files:
                     full_fname = os.path.join(root, fname)
 
-                    remote_fname = "/".join(os.path.split(full_fname)[1:])
+                    if sys.platform == 'win32':
+                        remote_fname = "/".join(full_fname.split("\\")[1:])
+                    else:
+                        remote_fname = "/".join(full_fname.split("/")[1:])
                     if DEBUG: print repr(remote_fname)
+
                     try:
                         self.ftp.storbinary("STOR %s" % remote_fname, open(full_fname, "rb"))
                     except ftplib.error_perm, e:
