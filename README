@@ -6,6 +6,8 @@ Author: Chris Oliver <chris@excid3.com>
 
 Usage
 -----
+LogBot requires Python 2. It is NOT compatible with Python 3.
+
 python logbot.py
 
 Configuration is done inside logbot.py
