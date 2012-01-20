@@ -217,19 +217,18 @@ class Logbot(SingleServerIRCBot):
                         remote_fname = "/".join(full_fname.split("/")[1:])
                     if DEBUG: print repr(remote_fname)
 
-                    try:
-                        self.ftp.storbinary("STOR %s" % remote_fname, open(full_fname, "rb"))
-                    except ftplib.error_perm, e:
-                        code, error = str(e).split(" ", 1)
-                        if code == "553":
+                    # Upload!
+                    try: self.ftp.storbinary("STOR %s" % remote_fname, open(full_fname, "rb"))
+                    # Folder doesn't exist, try creating it and storing again
+                    except ftplib.error_perm, e: #code, error = str(e).split(" ", 1)
+                        if str(e).split(" ", 1)[0] == "553":
                             self.ftp.mkd(os.path.dirname(remote_fname))
                             self.ftp.storbinary("STOR %s" % remote_fname, open(full_fname, "rb"))
-                        else:
-                            raise e
-                    except ftplib.error_temp, e: # Reconnect on timeout
-                        self.set_ftp(connect_ftp())
-                    except ftplib.error, e: # Unsure of error, try reconnecting
-                        self.set_ftp(connect_ftp())
+                        else: raise e
+                    # Reconnect on timeout
+                    except ftplib.error_temp, e: self.set_ftp(connect_ftp())
+                    # Unsure of error, try reconnecting
+                    except ftplib.error, e:      self.set_ftp(connect_ftp())
 
             print "Finished uploading"
 
