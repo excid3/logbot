@@ -56,6 +56,7 @@ SERVER_PASS = None
 CHANNELS=["#excid3","#keryx"]
 NICK = "timber"
 NICK_PASS = ""
+LOG_FOLDER = "logs" # local log folder location
 
 HELP_MESSAGE = "Check out http://excid3.com"
 
@@ -232,7 +233,7 @@ class Logbot(SingleServerIRCBot):
         print "%s >>> %s" % (channel, msg)
 
         # Create the channel path if necessary
-        chan_path = "logs/%s" % channel
+        chan_path = "%s/%s" % (LOG_FOLDER, channel)
         if not os.path.exists(chan_path):
             os.makedirs(chan_path)
 
@@ -240,12 +241,12 @@ class Logbot(SingleServerIRCBot):
             write_string("%s/index.html" % chan_path, html_header.replace("%title%", "%s | Logs" % channel))
 
             # Append channel to log index
-            append_line("logs/index.html", '<a href="%s/index.html">%s</a>' % (channel.replace("#", "%23"), channel))
+            append_line("%s/index.html" % LOG_FOLDER, '<a href="%s/index.html">%s</a>' % (channel.replace("#", "%23"), channel))
 
         # Current log
         time = strftime("%H:%M:%S")
         date = strftime("%Y-%m-%d")
-        log_path = "logs/%s/%s.html" % (channel, date)
+        log_path = "%s/%s/%s.html" % (LOG_FOLDER, channel, date)
 
         # Create the log date index if it doesnt exist
         if not os.path.exists(log_path):
@@ -342,9 +343,9 @@ def connect_ftp():
 
 def main():
     # Create the logs directory
-    if not os.path.exists("logs"):
-        os.makedirs("logs")
-        write_string("logs/index.html", html_header.replace("%title%", "Chat Logs"))
+    if not os.path.exists(LOG_FOLDER):
+        os.makedirs(LOG_FOLDER)
+        write_string("%s/index.html" % LOG_FOLDER, html_header.replace("%title%", "Chat Logs"))
 
     # Start the bot
     bot = Logbot(SERVER, PORT, SERVER_PASS, CHANNELS, NICK, NICK_PASS)
