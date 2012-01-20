@@ -25,7 +25,7 @@
 
 
 __author__ = "Chris Oliver <excid3@gmail.com>"
-__version__ = "0.4.1"
+__version__ = "0.4.2"
 __date__ = "08/11/2009"
 __copyright__ = "Copyright (c) Chris Oliver"
 __license__ = "GPL2"
