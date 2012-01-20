@@ -223,6 +223,8 @@ class Logbot(SingleServerIRCBot):
                             raise e
                     except ftplib.error_temp, e: # Reconnect on timeout
                         self.set_ftp(connect_ftp())
+                    except ftplib.error, e: # Unsure of error, try reconnecting
+                        self.set_ftp(connect_ftp())
 
             print "Finished uploading"
 
