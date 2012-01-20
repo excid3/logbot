@@ -47,27 +47,31 @@ from irclib import nm_to_n
 
 
 ### Configuration options
-
 DEBUG = False
 
+# IRC Server Configuration
 SERVER = "irc.freenode.net"
 PORT = 6667
 SERVER_PASS = None
 CHANNELS=["#excid3","#keryx"]
 NICK = "timber"
 NICK_PASS = ""
-LOG_FOLDER = "logs" # local log folder location
 
+# The local folder to save logs
+LOG_FOLDER = "logs"
+
+# The message returned when someone messages the bot
 HELP_MESSAGE = "Check out http://excid3.com"
 
+# FTP Configuration
 FTP_SERVER = ""
 FTP_USER = ""
 FTP_PASS = ""
-FTP_FOLDER = ""
 # This folder and sub folders for any channels MUST be created on the server
-
+FTP_FOLDER = ""
+# The amount of messages to wait before uploading to the FTP server
 FTP_WAIT = 25
-# Only upload every 25 messages
+
 
 default_format = {
     "help" : HELP_MESSAGE,
