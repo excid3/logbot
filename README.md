@@ -1,7 +1,7 @@
 LogBot 0.4.2
 ============
 
-Author: Chris Oliver <chris@excid3.com>
+Written by Chris Oliver <<chris@excid3.com>>
 
 Usage
 -----
