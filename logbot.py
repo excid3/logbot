@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+# coding: utf-8
+
 """
    LogBot
 
@@ -45,6 +47,15 @@ except:
 from ircbot import SingleServerIRCBot
 from irclib import nm_to_n
 
+import re
+
+pat1 = re.compile(r"(^|[\n ])(([\w]+?://[\w\#$%&~.\-;:=,?@\[\]+]*)(/[\w\#$%&~/.\-;:=,?@\[\]+]*)?)", re.IGNORECASE | re.DOTALL)
+
+#urlfinder = re.compile("(?i)\b((?:[a-z][\w-]+:(?:/{1,3}|[a-z0-9%])|www\d{0,3}[.]|[a-z0-9.\-]+[.][a-z]{2,4}/)(?:[^\s()<>]+|\(([^\s()<>]+|(\([^\s()<>]+\)))*\))+(?:\(([^\s()<>]+|(\([^\s()<>]+\)))*\)|[^\s`!()\[\]{};:'\".,<>?«»“”‘’]))")
+
+def urlify2(value):
+    return pat1.sub(r'\1<a href="\2" target="_blank">\3</a>', value)
+    #return urlfinder.sub(r'<a href="\1">\1</a>', value)
 
 ### Configuration options
 DEBUG = False
@@ -190,6 +201,7 @@ class Logbot(SingleServerIRCBot):
         # Format the event properly
         chans = event.target()
         msg = self.format_event(name, event, params)
+        msg = urlify2(msg)
 
         # Quit goes across all channels
         if not chans or not chans.startswith("#"):
