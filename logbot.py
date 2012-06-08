@@ -199,7 +199,10 @@ class Logbot(SingleServerIRCBot):
 
     def write_event(self, name, event, params={}):
         # Format the event properly
-        chans = event.target()
+        if name == 'nick':
+          chans = params["%chan%"]
+        else:
+          chans = event.target()
         msg = self.format_event(name, event, params)
         msg = urlify2(msg)
 
@@ -323,10 +326,15 @@ class Logbot(SingleServerIRCBot):
                          })
 
     def on_nick(self, c, e):
-        self.write_event("nick", e,
-                         {"%old%" : nm_to_n(e.source()),
-                          "%new%" : e.target(),
-                         })
+        old_nick = nm_to_n(e.source())
+        # Only write the event on channels that actually had the user in the channel
+        for chan in self.channels:
+            if old_nick in [x.lstrip('~%&@+') for x in self.channels[chan].users()]:
+                self.write_event("nick", e,
+                             {"%old%" : old_nick,
+                              "%new%" : e.target(),
+                              "%chan%": chan,
+                             })
 
     def on_part(self, c, e):
         self.write_event("part", e)
