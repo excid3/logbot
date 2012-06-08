@@ -262,7 +262,7 @@ class Logbot(SingleServerIRCBot):
             write_string("%s/index.html" % chan_path, html_header.replace("%title%", "%s | Logs" % channel_title))
 
             # Append channel to log index
-            append_line("%s/index.html" % LOG_FOLDER, '<a href="%s/index.html">%s</a>' % (channel.replace("#", "%23"), channel))
+            append_line("%s/index.html" % LOG_FOLDER, '<a href="%s/index.html">%s</a>' % (channel.replace("#", "%23"), channel_title))
 
         # Current log
         time = strftime("%H:%M:%S")
