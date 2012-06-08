@@ -249,6 +249,9 @@ class Logbot(SingleServerIRCBot):
 
     def append_log_msg(self, channel, msg):
         print "%s >>> %s" % (channel, msg)
+        #Make sure the channel is always lowercase to prevent logs with other capitalisations to be created
+        channel_title = channel
+        channel = channel.lower()
 
         # Create the channel path if necessary
         chan_path = "%s/%s" % (LOG_FOLDER, channel)
@@ -256,7 +259,7 @@ class Logbot(SingleServerIRCBot):
             os.makedirs(chan_path)
 
             # Create channel index
-            write_string("%s/index.html" % chan_path, html_header.replace("%title%", "%s | Logs" % channel))
+            write_string("%s/index.html" % chan_path, html_header.replace("%title%", "%s | Logs" % channel_title))
 
             # Append channel to log index
             append_line("%s/index.html" % LOG_FOLDER, '<a href="%s/index.html">%s</a>' % (channel.replace("#", "%23"), channel))
@@ -268,7 +271,7 @@ class Logbot(SingleServerIRCBot):
 
         # Create the log date index if it doesnt exist
         if not os.path.exists(log_path):
-            write_string(log_path, html_header.replace("%title%", "%s | Logs for %s" % (channel, date)))
+            write_string(log_path, html_header.replace("%title%", "%s | Logs for %s" % (channel_title, date)))
 
             # Append date log
             append_line("%s/index.html" % chan_path, '<a href="%s.html">%s</a>' % (date, date))
