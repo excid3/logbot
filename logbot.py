@@ -199,14 +199,14 @@ class Logbot(SingleServerIRCBot):
 
     def write_event(self, name, event, params={}):
         # Format the event properly
-        if name == 'nick':
+        if name == 'nick' or name == 'quit':
           chans = params["%chan%"]
         else:
           chans = event.target()
         msg = self.format_event(name, event, params)
         msg = urlify2(msg)
 
-        # Quit goes across all channels
+        # In case there are still events that don't supply a channel name (like /quit and /nick did)
         if not chans or not chans.startswith("#"):
             chans = self.chans
         else:
@@ -352,7 +352,11 @@ class Logbot(SingleServerIRCBot):
         c.privmsg(nm_to_n(e.source()), self.format["help"])
 
     def on_quit(self, c, e):
-        self.write_event("quit", e)
+        nick = nm_to_n(e.source())
+        # Only write the event on channels that actually had the user in the channel
+        for chan in self.channels:
+            if nick in [x.lstrip('~%&@+') for x in self.channels[chan].users()]:
+                self.write_event("quit", e, {"%chan%" : chan})
 
     def on_topic(self, c, e):
         self.write_event("topic", e)
