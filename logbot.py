@@ -199,11 +199,14 @@ class Logbot(SingleServerIRCBot):
 
     def write_event(self, name, event, params={}):
         # Format the event properly
-        chans = event.target()
+        if name == 'nick' or name == 'quit':
+          chans = params["%chan%"]
+        else:
+          chans = event.target()
         msg = self.format_event(name, event, params)
         msg = urlify2(msg)
 
-        # Quit goes across all channels
+        # In case there are still events that don't supply a channel name (like /quit and /nick did)
         if not chans or not chans.startswith("#"):
             chans = self.chans
         else:
@@ -246,6 +249,9 @@ class Logbot(SingleServerIRCBot):
 
     def append_log_msg(self, channel, msg):
         print "%s >>> %s" % (channel, msg)
+        #Make sure the channel is always lowercase to prevent logs with other capitalisations to be created
+        channel_title = channel
+        channel = channel.lower()
 
         # Create the channel path if necessary
         chan_path = "%s/%s" % (LOG_FOLDER, channel)
@@ -253,10 +259,10 @@ class Logbot(SingleServerIRCBot):
             os.makedirs(chan_path)
 
             # Create channel index
-            write_string("%s/index.html" % chan_path, html_header.replace("%title%", "%s | Logs" % channel))
+            write_string("%s/index.html" % chan_path, html_header.replace("%title%", "%s | Logs" % channel_title))
 
             # Append channel to log index
-            append_line("%s/index.html" % LOG_FOLDER, '<a href="%s/index.html">%s</a>' % (channel.replace("#", "%23"), channel))
+            append_line("%s/index.html" % LOG_FOLDER, '<a href="%s/index.html">%s</a>' % (channel.replace("#", "%23"), channel_title))
 
         # Current log
         time = strftime("%H:%M:%S")
@@ -265,7 +271,7 @@ class Logbot(SingleServerIRCBot):
 
         # Create the log date index if it doesnt exist
         if not os.path.exists(log_path):
-            write_string(log_path, html_header.replace("%title%", "%s | Logs for %s" % (channel, date)))
+            write_string(log_path, html_header.replace("%title%", "%s | Logs for %s" % (channel_title, date)))
 
             # Append date log
             append_line("%s/index.html" % chan_path, '<a href="%s.html">%s</a>' % (date, date))
@@ -323,10 +329,15 @@ class Logbot(SingleServerIRCBot):
                          })
 
     def on_nick(self, c, e):
-        self.write_event("nick", e,
-                         {"%old%" : nm_to_n(e.source()),
-                          "%new%" : e.target(),
-                         })
+        old_nick = nm_to_n(e.source())
+        # Only write the event on channels that actually had the user in the channel
+        for chan in self.channels:
+            if old_nick in [x.lstrip('~%&@+') for x in self.channels[chan].users()]:
+                self.write_event("nick", e,
+                             {"%old%" : old_nick,
+                              "%new%" : e.target(),
+                              "%chan%": chan,
+                             })
 
     def on_part(self, c, e):
         self.write_event("part", e)
@@ -344,7 +355,11 @@ class Logbot(SingleServerIRCBot):
         c.privmsg(nm_to_n(e.source()), self.format["help"])
 
     def on_quit(self, c, e):
-        self.write_event("quit", e)
+        nick = nm_to_n(e.source())
+        # Only write the event on channels that actually had the user in the channel
+        for chan in self.channels:
+            if nick in [x.lstrip('~%&@+') for x in self.channels[chan].users()]:
+                self.write_event("quit", e, {"%chan%" : chan})
 
     def on_topic(self, c, e):
         self.write_event("topic", e)
