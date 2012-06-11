@@ -378,15 +378,12 @@ class Logbot(SingleServerIRCBot):
         self.write_event("topic", e)
 
     # Loads the channel - timezone-location pairs from the CHANNEL_LOCATIONS_FILE
-    # Each line is expected to have the channelname and (pytz) TimeZone location separated by a space
-    # Example: 
-    # #excid3 UTC
-    # #Netherlands Europe/Amsterdam
+    # See the README for details and example
     def load_channel_locations(self):
         self.channel_locations = {}
         if os.path.exists(CHANNEL_LOCATIONS_FILE):
             f = open(CHANNEL_LOCATIONS_FILE, 'r')
-            self.channel_locations = dict([line.split() for line in f.readlines()])
+            self.channel_locations = dict((k.lower(), v) for k, v in dict([line.split(None,1) for line in f.readlines()]).iteritems())
 
 def connect_ftp():
     print "Using FTP %s..." % (FTP_SERVER)
