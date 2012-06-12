@@ -383,7 +383,7 @@ class Logbot(SingleServerIRCBot):
         self.channel_locations = {}
         if os.path.exists(CHANNEL_LOCATIONS_FILE):
             f = open(CHANNEL_LOCATIONS_FILE, 'r')
-            self.channel_locations = dict((k.lower(), v) for k, v in dict([line.split(None,1) for line in f.readlines()]).iteritems())
+            self.channel_locations = dict((k.lower(), v) for k, v in dict([line.strip().split(None,1) for line in f.readlines()]).iteritems())
 
 def connect_ftp():
     print "Using FTP %s..." % (FTP_SERVER)
