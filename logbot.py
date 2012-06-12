@@ -38,6 +38,10 @@ import os
 import ftplib
 import sys
 from time import strftime
+try:
+    from datetime import datetime
+    from pytz import timezone
+except: pass
 
 try:
     from hashlib import md5
@@ -83,6 +87,8 @@ FTP_FOLDER = ""
 # The amount of messages to wait before uploading to the FTP server
 FTP_WAIT = 25
 
+CHANNEL_LOCATIONS_FILE = os.path.expanduser("~/.logbot-channel_locations.conf")
+DEFAULT_TIMEZONE = 'UTC'
 
 default_format = {
     "help" : HELP_MESSAGE,
@@ -167,6 +173,7 @@ class Logbot(SingleServerIRCBot):
         self.count = 0
         self.nick_pass = nick_pass
 
+        self.load_channel_locations()
         print "Logbot %s" % __version__
         print "Connecting to %s:%i..." % (server, port)
         print "Press Ctrl-C to quit"
@@ -265,8 +272,14 @@ class Logbot(SingleServerIRCBot):
             append_line("%s/index.html" % LOG_FOLDER, '<a href="%s/index.html">%s</a>' % (channel.replace("#", "%23"), channel_title))
 
         # Current log
-        time = strftime("%H:%M:%S")
-        date = strftime("%Y-%m-%d")
+        try:
+            localtime = datetime.now(timezone(self.channel_locations.get(channel,DEFAULT_TIMEZONE)))
+            time = localtime.strftime("%H:%M:%S")
+            date = localtime.strftime("%Y-%m-%d")
+        except:
+            time = strftime("%H:%M:%S")
+            date = strftime("%Y-%m-%d")
+
         log_path = "%s/%s/%s.html" % (LOG_FOLDER, channel, date)
 
         # Create the log date index if it doesnt exist
@@ -364,6 +377,13 @@ class Logbot(SingleServerIRCBot):
     def on_topic(self, c, e):
         self.write_event("topic", e)
 
+    # Loads the channel - timezone-location pairs from the CHANNEL_LOCATIONS_FILE
+    # See the README for details and example
+    def load_channel_locations(self):
+        self.channel_locations = {}
+        if os.path.exists(CHANNEL_LOCATIONS_FILE):
+            f = open(CHANNEL_LOCATIONS_FILE, 'r')
+            self.channel_locations = dict((k.lower(), v) for k, v in dict([line.strip().split(None,1) for line in f.readlines()]).iteritems())
 
 def connect_ftp():
     print "Using FTP %s..." % (FTP_SERVER)
