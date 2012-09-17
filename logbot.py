@@ -211,6 +211,7 @@ class Logbot(SingleServerIRCBot):
         else:
           chans = event.target()
         msg = self.format_event(name, event, params)
+        msg = re.sub(r'\[(\d{1,2})m', '', msg)
         msg = urlify2(msg)
 
         # In case there are still events that don't supply a channel name (like /quit and /nick did)
