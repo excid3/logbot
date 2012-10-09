@@ -246,8 +246,9 @@ class Logbot(SingleServerIRCBot):
         try: msg = msg.replace("%channel%", event.target())
         except: pass
         msg = msg.replace("%color%", self.color(nm_to_n(event.source())))
-        user_message = cgi.escape(event.arguments()[0])
-        try: msg = msg.replace("%message%", html_color(user_message))
+        try:
+            user_message = cgi.escape(event.arguments()[0])
+            msg = msg.replace("%message%", html_color(user_message))
         except: pass
 
         return msg
