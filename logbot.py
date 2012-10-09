@@ -37,6 +37,7 @@ import cgi
 import os
 import ftplib
 import sys
+import itertools
 from time import strftime
 try:
     from datetime import datetime
@@ -156,6 +157,52 @@ def write_string(filename, string):
     f.write(string)
     f.close()
 
+color_pattern = re.compile(r'(\[\d{1,2}m)')
+"Pattern that matches ANSI color codes and the text that follows"
+
+def pairs(items):
+    """
+    Return pairs from items
+
+    >>> list(pairs([1,2,3,4]))
+    [(1, 2), (3, 4)]
+    """
+    items = iter(items)
+    while True:
+        yield next(items), next(items)
+
+def html_color(input):
+    """
+    >>> html_color("This is plain but [30m this is in color")
+    'This is plain but <span style="color: #000316"> this is in color</span>'
+    >>> html_color("[32mtwo[37mcolors")
+    '<span style="color: #00aa00">two</span><span style="color: #F5F1DE">colors</span>'
+    """
+    first = []
+    parts = color_pattern.split(input)
+    if len(parts) % 2:
+        # an odd number of parts occurred - first part is uncolored
+        first = [parts.pop(0)]
+    rest = itertools.starmap(replace_color, pairs(parts))
+    return ''.join(itertools.chain(first, rest))
+
+def replace_color(code, text):
+    code = code.lstrip('[').rstrip('m')
+    colors = {
+        '30': '000316',
+        '31': 'aa0000',
+        '32': '00aa00',
+        '33': 'aa5500',
+        '34': '0000aa',
+        '35': 'E850A8',
+        '36': '00aaaa',
+        '37': 'F5F1DE',
+    }
+    return '<span style="color: #%(color)s">%(text)s</span>' % dict(
+        color = colors[code],
+        text = text,
+    )
+
 
 ### Logbot class
 
@@ -199,7 +246,8 @@ class Logbot(SingleServerIRCBot):
         try: msg = msg.replace("%channel%", event.target())
         except: pass
         msg = msg.replace("%color%", self.color(nm_to_n(event.source())))
-        try: msg = msg.replace("%message%", cgi.escape(event.arguments()[0]))
+        user_message = cgi.escape(event.arguments()[0])
+        try: msg = msg.replace("%message%", html_color(user_message))
         except: pass
 
         return msg
@@ -211,7 +259,6 @@ class Logbot(SingleServerIRCBot):
         else:
           chans = event.target()
         msg = self.format_event(name, event, params)
-        msg = re.sub(r'\[(\d{1,2})m', '', msg)
         msg = urlify2(msg)
 
         # In case there are still events that don't supply a channel name (like /quit and /nick did)
