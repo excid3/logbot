@@ -198,6 +198,8 @@ def replace_color(code, text):
         '36': '00aaaa',
         '37': 'F5F1DE',
     }
+    if code not in colors:
+        return text
     return '<span style="color: #%(color)s">%(text)s</span>' % dict(
         color = colors[code],
         text = text,
@@ -246,8 +248,9 @@ class Logbot(SingleServerIRCBot):
         try: msg = msg.replace("%channel%", event.target())
         except: pass
         msg = msg.replace("%color%", self.color(nm_to_n(event.source())))
-        user_message = cgi.escape(event.arguments()[0])
-        try: msg = msg.replace("%message%", html_color(user_message))
+        try:
+            user_message = cgi.escape(event.arguments()[0])
+            msg = msg.replace("%message%", html_color(user_message))
         except: pass
 
         return msg
